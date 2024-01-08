@@ -584,6 +584,7 @@ def plot_diagnostics(
 
 def plot_performance(
     df, x='alpha', y='score', normalize=False, hue=None,
+    fig=None, subplot=mpl.gridspec.GridSpec(1, 1)[:],
     rc_params={}, fig_params={}, ax_params={}, lg_params={}, col_params={},
     title=None, show=True, savefig=False, fname='performance_curve', **kwargs
 ):
@@ -602,6 +603,10 @@ def plot_performance(
         _description_, by default False
     hue : optional
         _description_, by default None
+    fig : Figure
+        Figure if we want to plot to an existing figure, by default None
+    subplot : SubplotSpec
+        location of the subplot in a GridSpec, by default mpl.gridspec.GridSpec(1, 1)[:]
     {rc_params}
     {fig_params}
     {ax_params}
@@ -613,6 +618,7 @@ def plot_performance(
     {fname}
     {kwargs}
     """.format(**_figs_params_docs)
+
     if normalize:
         df[y] = df[y] / max(df[y])
 
@@ -625,10 +631,11 @@ def plot_performance(
     sns.set_theme(style='ticks', rc=rc_defaults)
 
     # open figure and axes
-    fig_defaults = {'figsize': (6, 2)}
-    fig_defaults.update(fig_params)
-    fig = plt.figure(**fig_defaults)
-    ax = fig.subplots(1, 1)
+    if fig is None:
+        fig_defaults = {'figsize': (6, 2)}
+        fig_defaults.update(fig_params)
+        fig = plt.figure(**fig_defaults)
+    ax = fig.add_subplot(subplot)
 
     # set color palette
     col_defaults = {'palette': 'husl'}
@@ -679,6 +686,7 @@ def plot_performance(
 
 def plot_phase_space(
     x, y, sample=None, palette=None,
+    fig=None, subplot=mpl.gridspec.GridSpec(1, 1)[:],
     rc_params={}, fig_params={}, ax_params={},
     title=None, show=False, savefig=False, fname='phase_space'
 ):
@@ -695,6 +703,10 @@ def plot_phase_space(
         _description_, by default None
     palette : _type_, optional
         _description_, by default None
+    fig : Figure
+        Figure if we want to plot to an existing figure, by default None
+    subplot : SubplotSpec
+        location of the subplot in a GridSpec, by default mpl.gridspec.GridSpec(1, 1)[:]
     {rc_params}
     {fig_params}
     {ax_params}
@@ -703,6 +715,7 @@ def plot_phase_space(
     {savefig}
     {fname}
     """.format(**_figs_params_docs)
+
     # time steps
     if sample is None:
         t = np.arange(x.shape[0])
@@ -715,21 +728,23 @@ def plot_phase_space(
                    'lines.linewidth': 1, 'savefig.format': 'png'}
     if palette is not None:
         # set cycler for color to change as a function of time step
-        rc_defaults['axes.prop_cycle'] = cycler(color=sns.color_palette(palette, t.size-1))
+        rc_defaults['axes.prop_cycle'] = cycler(
+            color=sns.color_palette(palette=palette, n_colors=t.size+1))
     rc_defaults.update(rc_params)
     sns.set_theme(style='ticks', rc=rc_defaults)
 
     # open figure and axes
-    fig_defaults = {'figsize': (4, 4)}
-    fig_defaults.update(fig_params)
-    fig = plt.figure(**fig_defaults)
-    ax = fig.subplots(1, 1)
+    if fig is None:
+        fig_defaults = {'figsize': (4, 4)}
+        fig_defaults.update(fig_params)
+        fig = plt.figure(**fig_defaults)
+    ax = fig.add_subplot(subplot)
 
     # plot data (these plots are easier with matplotlib)
     if palette is None:
         ax.plot(x[t], y[t])
     else:
-        for i in range(t.size-1):
+        for i in range(t.size-2):
             ax.plot(x[t[i:i+2]], y[t[i:i+2]])
 
     # set axis properties
@@ -756,6 +771,9 @@ def plot_phase_space(
    
     # reset rc defaults
     mpl.rcdefaults()
+
+    return fig, ax
+
 
 def plot_spike_raster(tspike, x1, x2, title = "Spike Raster"):
     """
@@ -798,11 +816,12 @@ def plot_spike_raster(tspike, x1, x2, title = "Spike Raster"):
     plt.grid(True, linestyle='--', alpha = 0.7)
     plt.show()
 
+
 def plot_membrane_voltages(membrane_voltages, x1, x2, neuron_idx = None, 
                            dt = 0.05, title="Membrane Voltages"):
     """
     Plot the membrane voltages of the neurons.
-    
+
     Parameters
     ----------
     membrane_voltages : (nt, N) numpy.ndarray
@@ -822,7 +841,7 @@ def plot_membrane_voltages(membrane_voltages, x1, x2, neuron_idx = None,
     title : str, optional
         title of the plot, by default "Membrane Voltages"
     """
-    
+
     if neuron_idx is None:
         neuron_idx = np.arange(membrane_voltages.shape[1])
     nneurons = len(neuron_idx)
@@ -842,3 +861,246 @@ def plot_membrane_voltages(membrane_voltages, x1, x2, neuron_idx = None,
     fig.supxlabel('Time (ms)', y = -0.03)
     fig.tight_layout()
     plt.show()
+
+
+def plot_diagnostics_single(
+    data, feature_set='data', idx_features=None, n_features=None,
+    sample=None, palette=None, cycler_axis=1,
+    fig=None, ax=None, subplot=mpl.gridspec.GridSpec(1, 1)[:],
+    rc_params={}, fig_params={}, ax_params={}, lg_params={},
+    title=None, show=False, savefig=False, fname='diagnostics_curve', **kwargs
+):
+    """
+    #TODO
+    _summary_
+
+    Parameters
+    ----------
+    data : _type_
+        _description_
+    feature_set : _type_
+        _description_
+    idx_features : _type_, optional
+        _description_, by default None
+    n_features : _type_, optional
+        _description_, by default None
+    sample : _type_, optional
+        _description_, by default None
+    palette : _type_, optional
+        _description_, by default 'deep'
+    fig : Figure
+        Figure if we want to plot to an existing figure, by default None
+    ax : Axes
+        Axes if we want to plot to an existing axes, by default None
+    subplot : SubplotSpec
+        location of the subplot in a GridSpec, by default mpl.gridspec.GridSpec(1, 1)[:]
+    {rc_params}
+    {fig_params}
+    {ax_params}
+    {lg_params}
+    {title}
+    {show}
+    {savefig}
+    {fname}
+    """.format(**_figs_params_docs)
+
+    # time steps
+    if sample is None:
+        t = np.arange(data.shape[0])
+    else:
+        t = np.arange(*sample)
+
+    # set cycler
+    if cycler_axis == 0:
+        prop_cycle = cycler(color=sns.color_palette(
+            palette=palette, n_colors=t.shape[0]))
+    if cycler_axis == 1:
+        prop_cycle = cycler(color=sns.color_palette(palette=palette))
+
+    # transform data
+    x = transform_data(data, feature_set, idx_features=idx_features,
+                       n_features=n_features, **kwargs)
+
+    # set plotting theme
+    rc_defaults = {'axes.prop_cycle': prop_cycle,
+                   'figure.titlesize': 22, 'axes.labelsize': 22,
+                   'xtick.labelsize': 22, 'ytick.labelsize': 22,
+                   'legend.fontsize': 11, 'legend.loc': 'upper right',
+                   'lines.linewidth': 2, 'savefig.format': 'png'}
+    rc_defaults.update(rc_params)
+    sns.set_theme(style='ticks', rc=rc_defaults)
+
+    # open figure and axes
+    if fig is None:
+        fig_defaults = {'figsize': (4, 4), 'layout': 'tight'}
+        fig_defaults.update(fig_params)
+        fig = plt.figure(**fig_defaults)
+    if ax is None:
+        ax = fig.add_subplot(subplot)
+
+    # update cycler (note: needed when calling plot_diagnostics_single multiple times)
+    # ax.set_prop_cycle(rc_defaults['axes.prop_cycle'])
+
+    if x.size > 0:
+        # plot data (these plots are easier with matplotlib)
+        if cycler_axis == 0:
+            ax.plot(np.vstack((t[np.newaxis, :-1],
+                               t[np.newaxis, 1:])),
+                    np.vstack((x[t[:-1]].T,
+                               x[t[1:]].T)))
+        elif cycler_axis == 1:
+            ax.plot(t[:, np.newaxis], x[t])
+
+        # set legend
+        labels = ['_'] if np.squeeze(x).ndim == 1 else [f'_{n+1}' for n in range(x.shape[1])]
+        lg_defaults = {'labels': labels}
+        lg_defaults.update(**lg_params)
+        try:  # get previously plotted legends if exist
+            lg = ax.lines[-1].axes.get_legend()
+            lg_defaults['labels'] = [text.get_text() for text in lg.texts] + lg_defaults['labels']
+        except:
+            pass
+        ax.legend(handles=ax.lines, **lg_defaults)
+
+    # set axes properties
+    axes_defaults = {'xlim': (0, 400), 'xticks': np.arange(0, 450, 50),
+                     'xlabel': 'time steps'}
+    axes_defaults.update(**ax_params)
+    ax.set(**axes_defaults)
+
+    # set title
+    if title is not None:
+        fig.suptitle(title)
+
+    sns.despine(offset=10, trim=False,
+                top=True, bottom=False,
+                right=True, left=False)
+
+    if show:
+        plt.show(block=True)
+
+    if savefig:
+        fig.savefig(fname + '.' + mpl.rcParams['savefig.format'],
+                    transparent=True, bbox_inches='tight', dpi=300)
+
+        plt.close()
+
+    # reset rc defaults
+    mpl.rcdefaults()
+
+    return fig, ax
+
+
+def plot_diagnostics_single_raster(
+    data, feature_set='data', idx_features=None, n_features=None,
+    sample=None, xlim=[0, 400], palette='viridis',
+    cbar={}, fig=None, subplot=mpl.gridspec.GridSpec(1, 1)[:],
+    rc_params={}, fig_params={}, ax_params={},
+    title=None, show=False, savefig=False, fname='diagnostics_curve', **kwargs
+):
+    """
+    #TODO
+    _summary_
+
+    Parameters
+    ----------
+    data : _type_
+        _description_
+    feature_set : _type_
+        _description_
+    idx_features : _type_, optional
+        _description_, by default None
+    n_features : _type_, optional
+        _description_, by default None
+    sample : _type_, optional
+        _description_, by default None
+    xlim : _type_, optional
+        _description_, by default [0, 400]
+    palette : _type_, optional
+        _description_, by default 'viridis'
+    cbar : dict
+        dictionary of colobar settings, by default dict()
+    fig : Figure
+        Figure if we want to plot to an existing figure, by default None
+    subplot : SubplotSpec
+        location of the subplot in a GridSpec, by default mpl.gridspec.GridSpec(1, 1)[:]
+    {rc_params}
+    {fig_params}
+    {ax_params}
+    {title}
+    {show}
+    {savefig}
+    {fname}
+    """.format(**_figs_params_docs)
+
+    # transform data
+    x = transform_data(data, feature_set, idx_features=idx_features,
+                       n_features=n_features, **kwargs)
+
+    # set plotting theme
+    rc_defaults = {'figure.titlesize': 22, 'axes.labelsize': 22,
+                   'xtick.labelsize': 22, 'ytick.labelsize': 22,
+                   'savefig.format': 'png'}
+    rc_defaults.update(rc_params)
+    sns.set_theme(style='ticks', rc=rc_defaults)
+
+    # open figure and axes
+    if fig is None:
+        fig_defaults = {'figsize': (4, 4), 'layout': 'tight'}
+        fig_defaults.update(fig_params)
+        fig = plt.figure(**fig_defaults)
+    if subplot is None:
+        subplot = mpl.gridspec.GridSpec(1, 2, figure=fig)[:]
+    nrows, ncols, start, stop = subplot.get_geometry()
+    ax = fig.add_subplot(subplot._gridspec[start:stop])
+
+    # plot data
+    if x.size > 0:
+        ax.imshow(x.T, aspect='auto')
+
+        # set colorbar
+        cbar_defaults = {'norm': 'norm', 'width': 0.1}
+        cbar_defaults.update(cbar)
+        vmin = x[x != 0].min()
+        vmax = x.max()
+        if cbar_defaults['norm'] == 'lognorm' and vmax/vmin > 10:
+            # use log scale if data spread more than 1 magnitude
+            pcm = ax.pcolormesh(x.T, norm=mpl.colors.LogNorm(
+                vmin=vmin, vmax=vmax), cmap=getattr(mpl.cm, palette))
+        else:
+            # use linear scale by default
+            pcm = ax.pcolormesh(x.T, cmap=getattr(mpl.cm, palette))
+        cax = fig.add_subplot(subplot._gridspec[stop])  # temporary axes
+        fig.colorbar(pcm, ax=cax, location='right', fraction=1, aspect=5)
+        cax.remove()
+
+    # set axes properties
+    axes_defaults = {'xlabel': 'time steps', 'ylabel': 'Nodes',
+                     'xticks': np.arange(xlim[0], xlim[1]+50, 50)}
+    if sample[-1] == xlim[-1]:
+        axes_defaults['xticklabels'] = axes_defaults['xticks']
+        axes_defaults['xticks'] = axes_defaults['xticks'] - (xlim[-1] - np.diff(sample))
+    axes_defaults.update(**ax_params)
+    ax.set(**axes_defaults)
+
+    # set title
+    if title is not None:
+        fig.suptitle(title)
+
+    sns.despine(offset=10, trim=False,
+                top=True, bottom=False,
+                right=True, left=False, ax=ax)
+
+    if show:
+        plt.show(block=True)
+
+    if savefig:
+        fig.savefig(fname=fname + '.' + mpl.rcParams['savefig.format'],
+                    transparent=True, bbox_inches='tight', dpi=300)
+
+        plt.close()
+
+    # reset rc defaults
+    mpl.rcdefaults()
+
+    return fig, ax
